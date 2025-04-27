@@ -36,6 +36,9 @@ DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 # For production, add your domain names here
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 
+if not DEBUG:
+    ALLOWED_HOSTS += ['.onrender.com']
+
 # Application definition
 
 INSTALLED_APPS = [
