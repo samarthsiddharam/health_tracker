@@ -72,3 +72,9 @@ python manage.py runserver
 
     Export data when needed
 
+### Screenshots
+Login
+![Health Tracker Screenshot](screenshots/login.png)	
+
+Add Record
+![Health Tracker Screenshot](screenshots/add_record.png)
