@@ -1,0 +1,101 @@
+<!-- 
+Login template for Health Tracker application
+
+This template extends the base template and provides:
+- User authentication form
+- Error messaging
+- Navigation to registration and password reset
+
+Uses custom auth.css for styling
+-->
+
+{% extends "tracker/base.html" %}
+{% load static %}
+
+{% block title %}Login - Health Tracker{% endblock %}
+
+{% block extra_css %}
+<!-- Custom CSS for authentication pages -->
+<link rel="stylesheet" href="{% static 'css/auth.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <!-- Header section -->
+        <div class="auth-header">
+            <h2>Welcome Back!</h2>
+            <p>Log in to track your health metrics</p>
+        </div>
+        
+        <!-- Error messaging -->
+        {% if form.errors %}
+        <div class="alert alert-danger">
+            <i class="fas fa-exclamation-circle"></i>
+            Your username and password didn't match. Please try again.
+        </div>
+        {% endif %}
+        
+        <!-- Next URL handling -->
+        {% if next %}
+            {% if user.is_authenticated %}
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                Your account doesn't have access to this page. To proceed,
+                please login with an account that has access.
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                Please login to see this page.
+            </div>
+            {% endif %}
+        {% endif %}
+        
+        <!-- Login Form -->
+        <form method="post" class="auth-form" novalidate>
+            {% csrf_token %}
+            
+            <!-- Username field -->
+            <div class="form-group">
+                <label for="{{ form.username.id_for_label }}">
+                    <i class="fas fa-user"></i> Username
+                </label>
+                {{ form.username }}
+                {% if form.username.errors %}
+                <div class="invalid-feedback">
+                    {{ form.username.errors|join:", " }}
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Password field -->
+            <div class="form-group">
+                <label for="{{ form.password.id_for_label }}">
+                    <i class="fas fa-lock"></i> Password
+                </label>
+                {{ form.password }}
+                {% if form.password.errors %}
+                <div class="invalid-feedback">
+                    {{ form.password.errors|join:", " }}
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Form actions -->
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </button>
+                <input type="hidden" name="next" value="{{ next }}">
+            </div>
+        </form>
+        
+        <!-- Footer links -->
+        <div class="auth-footer">
+            <p>Don't have an account? <a href="{% url 'register' %}">Register here</a></p>
+            <p><a href="{% url 'password_reset' %}">Forgot your password?</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

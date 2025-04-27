@@ -1,0 +1,127 @@
+<!-- 
+Base Template for Health Tracker Application
+
+This template serves as the foundation for all pages in the application.
+It includes:
+- Responsive meta tags
+- Font and icon dependencies
+- Navigation sidebar (for authenticated users)
+- Message display system
+- Loading indicators
+- Block sections for page-specific content
+
+All other templates should extend this base template.
+-->
+
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <!-- Meta Tags -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    
+    <!-- Title Block -->
+    <title>{% block title %}Health Tracker{% endblock %}</title>
+    
+    <!-- Font and Icon Dependencies -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
+    
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    
+    <!-- Extra CSS Block for page-specific styles -->
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    <!-- Main Application Container -->
+    <div class="app-container">
+        {% if user.is_authenticated %}
+        <!-- Sidebar Navigation (Visible only when logged in) -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-heartbeat"></i> Health Tracker</h2>
+                <p class="user-greeting">
+                    <i class="fas fa-user-circle"></i> Welcome, {{ user.username }}
+                </p>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <!-- Dashboard Link -->
+                <a href="{% url 'dashboard' %}" 
+                   class="nav-link {% if request.path == '/' %}active{% endif %}"
+                   aria-label="Dashboard">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+                
+                <!-- Add Record Link -->
+                <a href="{% url 'add_record' %}" 
+                   class="nav-link {% if request.path == '/add/' %}active{% endif %}"
+                   aria-label="Add Health Record">
+                    <i class="fas fa-plus-circle"></i> Add Record
+                </a>
+                
+                <!-- Data Export Links -->
+                <a href="{% url 'export_csv' %}" class="nav-link" aria-label="Export to CSV">
+                    <i class="fas fa-file-csv"></i> Export CSV
+                </a>
+                
+                <a href="{% url 'export_pdf' %}" class="nav-link" aria-label="Export to PDF">
+                    <i class="fas fa-file-pdf"></i> Export PDF
+                </a>
+                
+                <!-- Logout Link -->
+                <a href="{% url 'logout' %}" class="nav-link logout-link" aria-label="Logout">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </nav>
+        </aside>
+        {% endif %}
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- System Messages Display -->
+            {% if messages %}
+            <div class="messages-container">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}" role="alert">
+                    <i class="fas 
+                        {% if message.tags == 'success' %}fa-check-circle{% endif %}
+                        {% if message.tags == 'error' %}fa-exclamation-circle{% endif %}
+                        {% if message.tags == 'warning' %}fa-exclamation-triangle{% endif %}
+                        {% if message.tags == 'info' %}fa-info-circle{% endif %}
+                    "></i>
+                    {{ message }}
+                    <button class="close-btn" 
+                            onclick="this.parentElement.style.display='none'"
+                            aria-label="Close message">
+                        &times;
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Content Block (To be filled by child templates) -->
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- JavaScript Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{% static 'js/main.js' %}"></script>
+    
+    <!-- Extra JavaScript Block for page-specific scripts -->
+    {% block extra_js %}{% endblock %}
+    
+    <!-- Loading Indicators -->
+    <div class="loading-overlay" id="loading-overlay" style="display: none;"></div>
+    <div class="loading-spinner" id="loading-spinner" style="display: none;">
+        <i class="fas fa-spinner fa-spin"></i>
+    </div>
+</body>
+</html>

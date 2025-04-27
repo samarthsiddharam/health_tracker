@@ -1,0 +1,126 @@
+<!--
+Add Health Record Template
+
+This template allows users to:
+- Add new health records with date, steps, water intake, and sleep data
+- View form validation errors
+- Receive success/error messages
+- Navigate back to dashboard
+
+Extends base.html and uses form.css for styling
+-->
+
+{% extends "tracker/base.html" %}
+{% load static %}
+
+{% block title %}Add Record - Health Tracker{% endblock %}
+
+{% block extra_css %}
+<!-- Custom CSS for form styling -->
+<link rel="stylesheet" href="{% static 'css/form.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-card">
+        <!-- Form Header -->
+        <h2>
+            <i class="fas fa-plus-circle"></i> Add Health Record
+        </h2>
+        
+        <!-- System Messages -->
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                <i class="fas 
+                    {% if message.tags == 'success' %}fa-check-circle{% endif %}
+                    {% if message.tags == 'error' %}fa-exclamation-circle{% endif %}
+                    {% if message.tags == 'warning' %}fa-exclamation-triangle{% endif %}
+                    {% if message.tags == 'info' %}fa-info-circle{% endif %}
+                "></i>
+                {{ message }}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <!-- Health Record Form -->
+        <form method="post" class="health-form" novalidate>
+            {% csrf_token %}
+            
+            <!-- Date Field -->
+            <div class="form-group">
+                <label for="{{ form.date.id_for_label }}">
+                    <i class="fas fa-calendar-day"></i> Date
+                </label>
+                {{ form.date }}
+                {% if form.date.errors %}
+                <div class="error-message">
+                    <i class="fas fa-exclamation-circle"></i>
+                    {{ form.date.errors|join:", " }}
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Steps Field -->
+            <div class="form-group">
+                <label for="{{ form.steps.id_for_label }}">
+                    <i class="fas fa-walking"></i> Steps
+                </label>
+                {{ form.steps }}
+                {% if form.steps.errors %}
+                <div class="error-message">
+                    <i class="fas fa-exclamation-circle"></i>
+                    {{ form.steps.errors|join:", " }}
+                </div>
+                {% endif %}
+                <small class="form-text text-muted">Total steps taken today</small>
+            </div>
+            
+            <!-- Water Intake Field -->
+            <div class="form-group">
+                <label for="{{ form.water_intake_ml.id_for_label }}">
+                    <i class="fas fa-tint"></i> Water Intake (ml)
+                </label>
+                {{ form.water_intake_ml }}
+                {% if form.water_intake_ml.errors %}
+                <div class="error-message">
+                    <i class="fas fa-exclamation-circle"></i>
+                    {{ form.water_intake_ml.errors|join:", " }}
+                </div>
+                {% endif %}
+                <small class="form-text text-muted">Milliliters consumed today</small>
+            </div>
+            
+            <!-- Sleep Hours Field -->
+            <div class="form-group">
+                <label for="{{ form.sleep_hours.id_for_label }}">
+                    <i class="fas fa-bed"></i> Sleep Hours
+                </label>
+                {{ form.sleep_hours }}
+                {% if form.sleep_hours.errors %}
+                <div class="error-message">
+                    <i class="fas fa-exclamation-circle"></i>
+                    {{ form.sleep_hours.errors|join:", " }}
+                </div>
+                {% endif %}
+                <small class="form-text text-muted">Hours slept last night (0.25 increments)</small>
+            </div>
+            
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Record
+                </button>
+                <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,123 @@
+<!--
+Registration Template for Health Tracker
+
+This template handles new user registration with:
+- Username and password fields
+- Password validation
+- Error messaging
+- Link to login page
+
+Extends base.html and uses auth.css for styling
+-->
+
+{% extends "tracker/base.html" %}
+{% load static %}
+
+{% block title %}Register - Health Tracker{% endblock %}
+
+{% block extra_css %}
+<!-- Custom CSS for authentication pages -->
+<link rel="stylesheet" href="{% static 'css/auth.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <!-- Registration Header -->
+        <div class="auth-header">
+            <h2><i class="fas fa-user-plus"></i> Create Your Account</h2>
+            <p>Start tracking your health metrics today</p>
+        </div>
+        
+        <!-- Registration Form -->
+        <form method="post" class="auth-form" novalidate>
+            {% csrf_token %}
+            
+            <!-- Non-field Errors -->
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger" role="alert">
+                <i class="fas fa-exclamation-circle"></i>
+                {% for error in form.non_field_errors %}
+                {{ error }}
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <!-- Username Field -->
+            <div class="form-group">
+                <label for="{{ form.username.id_for_label }}">
+                    <i class="fas fa-user"></i> Username
+                </label>
+                {{ form.username }}
+                {% if form.username.errors %}
+                <div class="error-message">
+                    <i class="fas fa-exclamation-circle"></i>
+                    {{ form.username.errors|join:", " }}
+                </div>
+                {% endif %}
+                <small class="form-text text-muted">
+                    Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.
+                </small>
+            </div>
+            
+            <!-- Password Field -->
+            <div class="form-group">
+                <label for="{{ form.password1.id_for_label }}">
+                    <i class="fas fa-lock"></i> Password
+                </label>
+                {{ form.password1 }}
+                {% if form.password1.errors %}
+                <div class="error-message">
+                    <i class="fas fa-exclamation-circle"></i>
+                    {{ form.password1.errors|join:", " }}
+                </div>
+                {% endif %}
+                <div class="password-hints">
+                    <small class="form-text text-muted">
+                        <i class="fas fa-info-circle"></i> Your password must contain:
+                    </small>
+                    <ul class="password-requirements">
+                        <li>At least 8 characters</li>
+                        <li>Not entirely numeric</li>
+                        <li>Not too common</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Password Confirmation Field -->
+            <div class="form-group">
+                <label for="{{ form.password2.id_for_label }}">
+                    <i class="fas fa-lock"></i> Confirm Password
+                </label>
+                {{ form.password2 }}
+                {% if form.password2.errors %}
+                <div class="error-message">
+                    <i class="fas fa-exclamation-circle"></i>
+                    {{ form.password2.errors|join:", " }}
+                </div>
+                {% endif %}
+                <small class="form-text text-muted">
+                    Enter the same password as before, for verification.
+                </small>
+            </div>
+            
+            <!-- Form Submission -->
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-user-plus"></i> Register
+                </button>
+            </div>
+        </form>
+        
+        <!-- Login Link -->
+        <div class="auth-footer">
+            <p>
+                Already have an account? 
+                <a href="{% url 'login' %}">
+                    <i class="fas fa-sign-in-alt"></i> Login here
+                </a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
