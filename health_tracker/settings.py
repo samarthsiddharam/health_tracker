@@ -12,6 +12,12 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 
+import os
+import dj_database_url
+from dotenv import load_dotenv
+
+load_dotenv()
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -20,15 +26,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # Note: In production, this should be stored as an environment variable
-SECRET_KEY = "django-insecure-(y4(vqbx=jfnt%qxtsq3^k6$3!s(=j&+gmdfaws&sy%y=px)hz"
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # Debug mode should be False in production for security
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
 # Hosts that this Django application can serve
 # For production, add your domain names here
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 
 # Application definition
 
@@ -47,6 +53,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",          # Security enhancements
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",   # Session management
     "django.middleware.common.CommonMiddleware",              # URL normalization
     "django.middleware.csrf.CsrfViewMiddleware",              # CSRF protection
@@ -84,14 +91,10 @@ WSGI_APPLICATION = "health_tracker.wsgi.application"
 # Database configuration
 # Using PostgreSQL as the database backend
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',  # PostgreSQL database engine
-        'NAME': 'healthtracker',                    # Database name
-        'USER': 'postgres',                        # Database user
-        'PASSWORD': 'postgresql123',               # Database password
-        'HOST': 'localhost',                       # Database host
-        'PORT': '5432',                            # Database port
-    }
+    'default': dj_database_url.config(
+        default=os.getenv('DATABASE_URL'),
+        conn_max_age=600
+    )
 }
 
 # Password validation
@@ -143,4 +146,5 @@ LOGIN_URL = 'login'                 # URL to redirect to for login (used by @log
 
 # Static files configuration
 STATICFILES_DIRS = [BASE_DIR / "static"]  # Additional directories for static files during development
-STATIC_ROOT = BASE_DIR / "staticfiles"    # Directory where static files will be collected for production
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')    # Directory where static files will be collected for production
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'

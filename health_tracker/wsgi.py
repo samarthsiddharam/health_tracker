@@ -1,4 +1,4 @@
-# HEALTH_TRACKER3.0/health_tracker/wsgi.py
+# HEALTH_TRACKER2.0/health_tracker/wsgi.py
 
 """
 WSGI config for health_tracker project.
@@ -11,8 +11,10 @@ https://docs.djangoproject.com/en/4.2/howto/deployment/wsgi/
 
 import os
 
+from whitenoise import WhiteNoise
+
 from django.core.wsgi import get_wsgi_application
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "health_tracker.settings")
 
-application = get_wsgi_application()
+application = WhiteNoise(get_wsgi_application())
