@@ -96,7 +96,8 @@ WSGI_APPLICATION = "health_tracker.wsgi.application"
 DATABASES = {
     'default': dj_database_url.config(
         default=os.getenv('DATABASE_URL'),
-        conn_max_age=600
+        conn_max_age=600,
+        ssl_require=True  # ← Critical for Render
     )
 }
 
@@ -150,4 +151,9 @@ LOGIN_URL = 'login'                 # URL to redirect to for login (used by @log
 # Static files configuration
 STATICFILES_DIRS = [BASE_DIR / "static"]  # Additional directories for static files during development
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')    # Directory where static files will be collected for production
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Remove whitenoise compression in production
+if not DEBUG:
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
+
+# STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
