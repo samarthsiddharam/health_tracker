@@ -11,7 +11,7 @@ This module contains all the view functions that handle:
 from django.contrib import messages
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import login
+from django.contrib.auth import login, get_user_model
 from django.http import HttpResponse
 import csv
 from django.utils import timezone
@@ -176,3 +176,10 @@ def export_pdf(request):
     p.showPage()
     p.save()
     return response
+
+def create_superuser_view(request):
+    User = get_user_model()
+    if not User.objects.filter(username='admin').exists():
+        User.objects.create_superuser('admin', 'samarth.bavlatti@gmail.com', 'IMCCHealth')
+        return HttpResponse("Superuser created!")
+    return HttpResponse("Superuser already exists.")

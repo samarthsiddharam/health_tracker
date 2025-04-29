@@ -7,13 +7,16 @@ The `urlpatterns` list routes URLs to views. For more information please see:
 
 from django.contrib import admin
 from django.urls import path, include
-from tracker.views import dashboard, add_record, register, export_csv, export_pdf
+from tracker.views import dashboard, add_record, register, export_csv, export_pdf, create_superuser_view
 from django.contrib.auth.views import LogoutView
 from django.conf import settings
 from django.conf.urls.static import static
 
 # Main URL patterns for the health tracker application
 urlpatterns = [
+    # Temporary for creating Superuser
+    path('create-superuser/', create_superuser_view),
+
     # Admin interface URL
     path('admin/', admin.site.urls),
     
