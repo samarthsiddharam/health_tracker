@@ -94,5 +94,5 @@ Add Record
 Distributed under the MIT License. See LICENSE for more information.
 
 ### Contact
-Your Name - samarth.bavlatti@gmail.com
+Samarth Bavlatti - samarth.bavlatti@gmail.com
 Project Link: https://github.com/samarthsiddharam/health_tracker
