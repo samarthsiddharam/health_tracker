@@ -74,7 +74,7 @@ spec:
                 container('dind') {
                     sh '''
                         sleep 10
-                        docker build -t static-site:latest .
+                        docker build -t health-tracker:latest .
                         docker image ls
                     '''
                 }
