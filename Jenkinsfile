@@ -6,8 +6,7 @@ apiVersion: v1
 kind: Pod
 spec:
   containers:
-
-  - name: sonar-scanner
+  - name: sonar
     image: sonarsource/sonar-scanner-cli
     command: ["cat"]
     tty: true
@@ -28,9 +27,6 @@ spec:
     image: bitnami/kubectl:latest
     command: ["cat"]
     tty: true
-    securityContext:
-      runAsUser: 0
-      readOnlyRootFilesystem: false
     env:
     - name: KUBECONFIG
       value: /kube/config
@@ -52,7 +48,7 @@ spec:
 
     environment {
         IMAGE_NAME = "health-tracker"
-        IMAGE_TAG  = "v2"
+        IMAGE_TAG  = "v3"
         NAMESPACE  = "2401008"
         NEXUS_REGISTRY = "nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085"
         NEXUS_REPO = "2401008_sam"
@@ -60,137 +56,67 @@ spec:
 
     stages {
 
-        /* =====================
+        /* ==================================================
            Build Docker Image
-        ===================== */
-        stage('Build Docker Image') {
+        ================================================== */
+        stage('Build') {
             steps {
                 container('dind') {
-                    sh '''
-                        echo "Waiting for Docker daemon..."
+                    sh """
                         sleep 15
-                        docker info
                         docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
-                    '''
+                    """
                 }
             }
         }
 
-        /* =====================
-           SonarQube Analysis
-        ===================== */
-        stage('SonarQube Analysis') {
-            steps {
-                container('sonar-scanner') {
-                    withCredentials([
-                        string(credentialsId: 'jenkins-token-08', variable: 'SONAR_TOKEN')
-                    ]) {
-                        sh '''
-                            sonar-scanner \
-                              -Dsonar.projectKey=2401008_health_tracker \
-                              -Dsonar.projectName=Health-Tracker-2401008 \
-                              -Dsonar.sources=. \
-                              -Dsonar.host.url=http://my-sonarqube-sonarqube.sonarqube.svc.cluster.local:9000 \
-                              -Dsonar.login=$SONAR_TOKEN
-                        '''
-                    }
-                }
-            }
-        }
-
-        /* =====================
-           Login to Nexus
-        ===================== */
-        stage('Login to Nexus') {
+        /* ==================================================
+           Push to Nexus
+        ================================================== */
+        stage('Push Image') {
             steps {
                 container('dind') {
-                    sh '''
-                        docker login ${NEXUS_REGISTRY} \
-                        -u student -p Imcc@2025
-                    '''
-                }
-            }
-        }
+                    sh """
+                        docker login ${NEXUS_REGISTRY} -u student -p Imcc@2025
 
-        /* =====================
-           Tag & Push Image
-        ===================== */
-        stage('Push Docker Image') {
-            steps {
-                container('dind') {
-                    sh '''
                         docker tag ${IMAGE_NAME}:${IMAGE_TAG} \
                         ${NEXUS_REGISTRY}/${NEXUS_REPO}/${IMAGE_NAME}:${IMAGE_TAG}
 
                         docker push \
                         ${NEXUS_REGISTRY}/${NEXUS_REPO}/${IMAGE_NAME}:${IMAGE_TAG}
-                    '''
+                    """
                 }
             }
         }
-        stage('Create / Fix Nexus ImagePullSecret') {
-    steps {
-        container('kubectl') {
-            sh '''
-            kubectl delete secret nexus-secret -n ${NAMESPACE} || true
 
-            kubectl create secret docker-registry nexus-secret \
-              --docker-server=${NEXUS_REGISTRY} \
-              --docker-username=student \
-              --docker-password=Imcc@2025 \
-              --docker-email=test@example.com \
-              -n ${NAMESPACE}
-            '''
-        }
-    }
-}
-
-
-        /* =====================
+        /* ==================================================
            Deploy to Kubernetes
-        ===================== */
-                stage('Deploy to Kubernetes') {
+        ================================================== */
+        stage('Deploy K8s') {
             steps {
                 container('kubectl') {
-                    sh '''
-                    kubectl delete deployment health-tracker-deployment -n 2401008 || true
+                    sh """
+                        kubectl create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
 
-                        kubectl create namespace 2401008 --dry-run=client -o yaml | kubectl apply -f -
-                        kubectl apply -f deployment.yaml -n 2401008
-        
-                        echo "Force deleting old pods..."
-                        kubectl delete pod -l app=health-tracker -n 2401008 --force --grace-period=0 || true
-        
-                        echo "Waiting for rollout (with timeout)..."
-                        kubectl rollout status deployment/health-tracker-deployment -n 2401008 --timeout=60s || true
-        
-                        echo "Current pods:"
-                        kubectl get pods -n 2401008
-                    '''
+                        kubectl apply -f deployment.yaml -n ${NAMESPACE}
+
+                        sleep 5
+                        kubectl rollout status deployment/health-tracker-deployment -n ${NAMESPACE}
+                    """
                 }
             }
         }
 
-
-        /* =====================
-           Debug Info (IMPORTANT)
-        ===================== */
-        stage('Debug Kubernetes State') {
+        /* ==================================================
+           Get Logs
+        ================================================== */
+        stage('Logs') {
             steps {
                 container('kubectl') {
-                    sh '''
-                        echo "====== PODS ======"
+                    sh """
                         kubectl get pods -n ${NAMESPACE}
-
-                        echo "====== SERVICES ======"
-                        kubectl get svc -n ${NAMESPACE}
-
-                        echo "====== INGRESS ======"
-                        kubectl get ingress -n ${NAMESPACE}
-
-                        echo "====== APP LOGS ======"
-                        kubectl logs -l app=health-tracker -n ${NAMESPACE} || true
-                    '''
+                        kubectl logs -l app=health-tracker -n ${NAMESPACE} --tail=50 || true
+                    """
                 }
             }
         }
