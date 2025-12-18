@@ -13,22 +13,22 @@ metadata:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: "static-site-deployment"
+  name: "health-tracker-deployment"
   namespace: "2401008"
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: static-site
+      app: health-tracker
   template:
     metadata:
       labels:
-        app: static-site
+        app: health-tracker
     spec:
       imagePullSecrets:
         - name: nexus-secret
       containers:
-        - name: static-site
+        - name: health-tracker
           image: 127.0.0.1:30085/2401008_sam/static-site:latest
           ports:
             - containerPort: 80
@@ -50,11 +50,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: "static-site-service"
+  name: "health-tracker-service"
   namespace: "2401008"
 spec:
   selector:
-    app: static-site
+    app: health-tracker
   ports:
     - protocol: TCP
       port: 80
@@ -67,14 +67,14 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: "static-site-ingress"
+  name: "health-tracker-ingress"
   namespace: "2401008"
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   ingressClassName: nginx
   rules:
-    - host: static.imcc.com
+    - host: health-tracker.imcc.com
       http:
         paths:
           - path: /
