@@ -128,6 +128,23 @@ spec:
                 }
             }
         }
+        stage('Create / Fix Nexus ImagePullSecret') {
+    steps {
+        container('kubectl') {
+            sh '''
+            kubectl delete secret nexus-secret -n ${NAMESPACE} || true
+
+            kubectl create secret docker-registry nexus-secret \
+              --docker-server=${NEXUS_REGISTRY} \
+              --docker-username=student \
+              --docker-password=Imcc@2025 \
+              --docker-email=test@example.com \
+              -n ${NAMESPACE}
+            '''
+        }
+    }
+}
+
 
         /* =====================
            Deploy to Kubernetes
