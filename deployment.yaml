@@ -8,12 +8,12 @@ metadata:
 
 ---
 # ============================================================
-# Deployment (NO PVC!)
+# Deployment
 # ============================================================
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: "health-tracker-deployment"
+  name: health-tracker-deployment
   namespace: "2401008"
 spec:
   replicas: 1
@@ -26,22 +26,12 @@ spec:
         app: health-tracker
     spec:
       imagePullSecrets:
-     containers:
-      - name: health-tracker
-        image: nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401008_sam/health-tracker:v2
-        ports:
-        - containerPort: 8000
-
-          # ❌ REMOVE THIS — no PVC mapping
-          # volumeMounts:
-          #   - name: static-media
-          #     mountPath: /usr/share/nginx/html
-
-      # ❌ REMOVE THIS ALSO — it hides all your HTML files
-      # volumes:
-      #   - name: static-media
-      #     persistentVolumeClaim:
-      #       claimName: "static-pvc"
+        - name: nexus-secret
+      containers:
+        - name: health-tracker
+          image: nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401008_sam/health-tracker:v2
+          ports:
+            - containerPort: 8000
 
 ---
 # ============================================================
@@ -50,7 +40,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: "health-tracker-service"
+  name: health-tracker-service
   namespace: "2401008"
 spec:
   selector:
@@ -59,6 +49,7 @@ spec:
     - protocol: TCP
       port: 80
       targetPort: 8000
+  type: ClusterIP
 
 ---
 # ============================================================
@@ -67,7 +58,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: "health-tracker-ingress"
+  name: health-tracker-ingress
   namespace: "2401008"
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
@@ -84,4 +75,3 @@ spec:
                 name: health-tracker-service
                 port:
                   number: 80
-
