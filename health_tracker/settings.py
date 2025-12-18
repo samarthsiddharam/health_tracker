@@ -94,12 +94,16 @@ WSGI_APPLICATION = "health_tracker.wsgi.application"
 # Database configuration
 # Using PostgreSQL as the database backend
 DATABASES = {
-    'default': dj_database_url.config(
-        default=os.getenv('DATABASE_URL'),
-        conn_max_age=600,
-        ssl_require=True  # ← Critical for Render
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT', '5432'),
+    }
 }
+
 
 # Password validation
 # These validators help ensure strong passwords
