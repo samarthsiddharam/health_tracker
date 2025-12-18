@@ -48,7 +48,8 @@ spec:
         - name: nexus-secret
       containers:
         - name: health-tracker
-          image: nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401008_sam/health-tracker:v2
+          image: 127.0.0.1:30085/2401008-project/health-tracker-2401008-v2:latest
+
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
