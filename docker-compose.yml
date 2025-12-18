@@ -1,0 +1,37 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: healthtracker_postgres_2401008
+    restart: always
+    environment:
+      POSTGRES_USER: samarth
+      POSTGRES_PASSWORD: Samarth@2025
+      POSTGRES_DB: healthtracker_2401008
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data_2401008:/var/lib/postgresql/data
+
+  healthtracker:
+    build: .
+    container_name: healthtracker_app_2401008
+    depends_on:
+      - postgres
+    ports:
+      - "8000:8000"
+    environment:
+      DB_NAME: healthtracker_2401008
+      DB_USER: samarth
+      DB_PASSWORD: Samarth@2025
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DEBUG: 0
+    volumes:
+      - static_volume_2401008:/app/static
+    restart: unless-stopped
+
+volumes:
+  postgres_data_2401008:
+  static_volume_2401008:
