@@ -127,13 +127,13 @@ spec:
         container('dind') {
             sh '''
                 docker tag health-tracker:v2 \
-                nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401008_sam/static-site:latest
+                nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401008_sam/health-tracker:v2
 
                 docker push \
-                nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401008_sam/static-site:latest
+                nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401008_sam/health-tracker:v2
 
                 docker pull \
-                nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401008_sam/static-site:latest
+                nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401008_sam/health-tracker:v2
             '''
         }
     }
