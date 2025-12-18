@@ -1,13 +1,12 @@
-FROM nginx:alpine
+FROM python:3.11-slim
 
-# Remove default nginx content
-RUN rm -rf /usr/share/nginx/html/*
+WORKDIR /app
 
-# Copy all your static website files into nginx folder
-COPY . /usr/share/nginx/html/
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Correct permissions
-RUN chmod -R 755 /usr/share/nginx/html
+COPY . .
 
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+EXPOSE 8000
+
+CMD ["gunicorn", "health_tracker.wsgi:application", "--bind", "0.0.0.0:8000"]
