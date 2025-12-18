@@ -136,6 +136,8 @@ spec:
             steps {
                 container('kubectl') {
                     sh '''
+                    kubectl delete deployment health-tracker-deployment -n 2401008 || true
+
                         kubectl create namespace 2401008 --dry-run=client -o yaml | kubectl apply -f -
                         kubectl apply -f deployment.yaml -n 2401008
         
