@@ -132,21 +132,25 @@ spec:
         /* =====================
            Deploy to Kubernetes
         ===================== */
-        stage('Deploy to Kubernetes') {
-    steps {
-        container('kubectl') {
-            sh '''
-                kubectl create namespace 2401008 --dry-run=client -o yaml | kubectl apply -f -
-                kubectl apply -f deployment.yaml -n 2401008
-
-                echo "Force deleting old pods..."
-                kubectl delete pod -l app=health-tracker -n 2401008 --force --grace-period=0 || true
-
-                kubectl rollout status deployment/health-tracker-deployment -n 2401008
-            '''
+                stage('Deploy to Kubernetes') {
+            steps {
+                container('kubectl') {
+                    sh '''
+                        kubectl create namespace 2401008 --dry-run=client -o yaml | kubectl apply -f -
+                        kubectl apply -f deployment.yaml -n 2401008
+        
+                        echo "Force deleting old pods..."
+                        kubectl delete pod -l app=health-tracker -n 2401008 --force --grace-period=0 || true
+        
+                        echo "Waiting for rollout (with timeout)..."
+                        kubectl rollout status deployment/health-tracker-deployment -n 2401008 --timeout=60s || true
+        
+                        echo "Current pods:"
+                        kubectl get pods -n 2401008
+                    '''
+                }
+            }
         }
-    }
-}
 
 
         /* =====================
