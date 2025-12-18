@@ -61,7 +61,7 @@ spec:
         stage('Checkout Code') {
             steps {
                 container('kubectl') {
-                    git url: 'https://github.com/samarthsiddharam/Demo.git', branch: 'main'
+                    git url: 'https://github.com/samarthsiddharam/health_tracker.git', branch: 'main'
                 }
             }
         }
