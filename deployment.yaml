@@ -81,7 +81,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: static-site-service
+                name: health-tracker-service
                 port:
                   number: 80
 
