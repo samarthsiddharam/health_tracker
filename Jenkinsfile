@@ -58,13 +58,13 @@ spec:
         /* ----------------------
             Checkout
         ---------------------- */
-        stage('Checkout Code') {
-            steps {
-                container('kubectl') {
-                    git url: 'https://github.com/samarthsiddharam/health_tracker.git', branch: 'main'
-                }
-            }
-        }
+        // stage('Checkout Code') {
+        //     steps {
+        //         container('kubectl') {
+        //             git url: 'https://github.com/samarthsiddharam/health_tracker.git', branch: 'main'
+        //         }
+        //     }
+        // }
 
         /* ----------------------
             Build Docker Image
