@@ -7,6 +7,25 @@ metadata:
   name: "2401008"
 
 ---
+
+# ============================================================
+# PersistentVolumeClaim (for static files)
+# ============================================================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: static-pvc
+  namespace: "2401008"
+spec:
+  storageClassName: local-path
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
+---
+
 # ============================================================
 # Deployment
 # ============================================================
@@ -34,11 +53,82 @@ spec:
           ports:
             - containerPort: 8000
 
+          # ------------------------------
+          # POSTGRES ENV VARIABLES
+          # ------------------------------
+          env:
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: DB_NAME
 
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: DB_USER
 
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: DB_PASSWORD
 
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-config
+                  key: DB_HOST
+
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-config
+                  key: DB_PORT
+
+            - name: DEBUG
+              value: "0"
+
+          # ------------------------------
+          # HEALTH CHECKS
+          # ------------------------------
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+
+          # ------------------------------
+          # STATIC FILE STORAGE
+          # ------------------------------
+          volumeMounts:
+            - name: static-media
+              mountPath: /app/static
+
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+
+      volumes:
+        - name: static-media
+          persistentVolumeClaim:
+            claimName: static-pvc
 
 ---
+
 # ============================================================
 # Service
 # ============================================================
@@ -52,11 +142,12 @@ spec:
     app: health-tracker
   ports:
     - protocol: TCP
-      port: 80
+      port: 8000
       targetPort: 8000
   type: ClusterIP
 
 ---
+
 # ============================================================
 # Ingress
 # ============================================================
@@ -79,4 +170,4 @@ spec:
               service:
                 name: health-tracker-service
                 port:
-                  number: 80
+                  number: 8000
