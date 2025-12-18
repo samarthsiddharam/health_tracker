@@ -126,7 +126,7 @@ spec:
     steps {
         container('dind') {
             sh '''
-                docker tag health-tracker:latest \
+                docker tag health-tracker:v2 \
                 nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401008_sam/static-site:latest
 
                 docker push \
