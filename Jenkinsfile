@@ -137,4 +137,38 @@ spec:
                 container('kubectl') {
                     sh '''
                         kubectl create namespace ${NAMESPACE} \
-                        --dry-run=client -o yaml |
+                        --dry-run=client -o yaml | kubectl apply -f -
+
+                        kubectl apply -f deployment.yaml -n ${NAMESPACE}
+
+                        kubectl rollout status deployment/health-tracker-deployment \
+                        -n ${NAMESPACE}
+                    '''
+                }
+            }
+        }
+
+        /* =====================
+           Debug Info (IMPORTANT)
+        ===================== */
+        stage('Debug Kubernetes State') {
+            steps {
+                container('kubectl') {
+                    sh '''
+                        echo "====== PODS ======"
+                        kubectl get pods -n ${NAMESPACE}
+
+                        echo "====== SERVICES ======"
+                        kubectl get svc -n ${NAMESPACE}
+
+                        echo "====== INGRESS ======"
+                        kubectl get ingress -n ${NAMESPACE}
+
+                        echo "====== APP LOGS ======"
+                        kubectl logs -l app=health-tracker -n ${NAMESPACE} || true
+                    '''
+                }
+            }
+        }
+    }
+}
