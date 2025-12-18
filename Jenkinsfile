@@ -12,20 +12,6 @@ spec:
     command: ["cat"]
     tty: true
 
-  - name: kubectl
-    image: bitnami/kubectl:latest
-    command: ["cat"]
-    tty: true
-    securityContext:
-      runAsUser: 0
-    env:
-    - name: KUBECONFIG
-      value: /kube/config
-    volumeMounts:
-    - name: kubeconfig-secret
-      mountPath: /kube/config
-      subPath: kubeconfig
-
   - name: dind
     image: docker:dind
     securityContext:
@@ -33,11 +19,25 @@ spec:
     env:
     - name: DOCKER_TLS_CERTDIR
       value: ""
-    command: ["sh", "-c", "dockerd-entrypoint.sh & sleep infinity"]
     volumeMounts:
     - name: docker-config
       mountPath: /etc/docker/daemon.json
       subPath: daemon.json
+
+  - name: kubectl
+    image: bitnami/kubectl:latest
+    command: ["cat"]
+    tty: true
+    securityContext:
+      runAsUser: 0
+      readOnlyRootFilesystem: false
+    env:
+    - name: KUBECONFIG
+      value: /kube/config
+    volumeMounts:
+    - name: kubeconfig-secret
+      mountPath: /kube/config
+      subPath: kubeconfig
 
   volumes:
   - name: docker-config
@@ -50,109 +50,91 @@ spec:
         }
     }
 
+    environment {
+        IMAGE_NAME = "health-tracker"
+        IMAGE_TAG  = "v2"
+        NAMESPACE  = "2401008"
+        NEXUS_REGISTRY = "nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085"
+        NEXUS_REPO = "2401008_sam"
+    }
+
     stages {
 
-        stage('Wait for Docker') {
-            steps {
-                container('dind') {
-                    sh '''
-                        echo "Waiting for Docker daemon..."
-                        for i in {1..30}; do
-                          docker info && break
-                          sleep 2
-                        done
-                    '''
-                }
-            }
-        }
-
+        /* =====================
+           Build Docker Image
+        ===================== */
         stage('Build Docker Image') {
             steps {
                 container('dind') {
                     sh '''
-                        docker build -t loan-app:latest .
-                        docker images
+                        echo "Waiting for Docker daemon..."
+                        sleep 15
+                        docker info
+                        docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
                     '''
                 }
             }
         }
 
+        /* =====================
+           SonarQube Analysis
+        ===================== */
         stage('SonarQube Analysis') {
             steps {
                 container('sonar-scanner') {
-                    withCredentials([string(credentialsId: 'sonar-token-2401034', variable: 'SONAR_TOKEN')]) {
+                    withCredentials([
+                        string(credentialsId: 'jenkins-token-08', variable: 'SONAR_TOKEN')
+                    ]) {
                         sh '''
-                        sonar-scanner \
-                          -Dsonar.projectKey=LoanPrediction-2401034-V2 \
-                          -Dsonar.projectName=LoanPrediction-2401034-V2 \
-                          -Dsonar.host.url=http://my-sonarqube-sonarqube.sonarqube.svc.cluster.local:9000 \
-                          -Dsonar.login=$SONAR_TOKEN \
-                          -Dsonar.sources=. \
-                          -Dsonar.python.version=3.10
+                            sonar-scanner \
+                              -Dsonar.projectKey=2401008_health_tracker \
+                              -Dsonar.projectName=Health-Tracker-2401008 \
+                              -Dsonar.sources=. \
+                              -Dsonar.host.url=http://my-sonarqube-sonarqube.sonarqube.svc.cluster.local:9000 \
+                              -Dsonar.login=$SONAR_TOKEN
                         '''
                     }
                 }
             }
         }
 
+        /* =====================
+           Login to Nexus
+        ===================== */
         stage('Login to Nexus') {
             steps {
                 container('dind') {
                     sh '''
-                        docker login nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085 \
-                          -u admin -p Changeme@2025
+                        docker login ${NEXUS_REGISTRY} \
+                        -u student -p Imcc@2025
                     '''
                 }
             }
         }
 
-        stage('Tag & Push Image') {
+        /* =====================
+           Tag & Push Image
+        ===================== */
+        stage('Push Docker Image') {
             steps {
                 container('dind') {
                     sh '''
-                        docker tag loan-app:latest \
-                          nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401034-project/loan-app-2401034-v2:latest
+                        docker tag ${IMAGE_NAME}:${IMAGE_TAG} \
+                        ${NEXUS_REGISTRY}/${NEXUS_REPO}/${IMAGE_NAME}:${IMAGE_TAG}
 
                         docker push \
-                          nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401034-project/loan-app-2401034-v2:latest
+                        ${NEXUS_REGISTRY}/${NEXUS_REPO}/${IMAGE_NAME}:${IMAGE_TAG}
                     '''
                 }
             }
         }
 
+        /* =====================
+           Deploy to Kubernetes
+        ===================== */
         stage('Deploy to Kubernetes') {
             steps {
                 container('kubectl') {
-                    dir('k8s') {
-                        sh '''
-                        kubectl create namespace 2401034 --dry-run=client -o yaml | kubectl apply -f -
-                        kubectl apply -f deployment.yaml -n 2401034
-
-                        kubectl rollout restart deployment loan-app-deployment -n 2401034
-                        '''
-                    }
-                }
-            }
-        }
-
-        stage('DEBUG – Kubernetes State') {
-            steps {
-                container('kubectl') {
                     sh '''
-                    echo "==== PODS ===="
-                    kubectl get pods -n 2401034
-
-                    echo "==== SERVICES ===="
-                    kubectl get svc -n 2401034
-
-                    echo "==== INGRESS ===="
-                    kubectl get ingress -n 2401034
-
-                    echo "==== POD LOGS ===="
-                    kubectl logs -l app=loan-app -n 2401034 --tail=50 || true
-                    '''
-                }
-            }
-        }
-    }
-}
+                        kubectl create namespace ${NAMESPACE} \
+                        --dry-run=client -o yaml |
