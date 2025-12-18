@@ -1,88 +1,155 @@
 pipeline {
-    agent any   // run on any available Jenkins node
+    agent {
+        kubernetes {
+            yaml '''
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
 
-    environment {
-        VENV = "venv"
-        // You can add DJANGO_SETTINGS_MODULE if needed
-        // DJANGO_SETTINGS_MODULE = "myproject.settings"
+  # Sonar Scanner Container
+  - name: sonar-scanner
+    image: sonarsource/sonar-scanner-cli
+    command: [ "cat" ]
+    tty: true
+
+  # Docker-in-Docker Container
+  - name: dind
+    image: docker:dind
+    securityContext:
+      privileged: true
+    env:
+    - name: DOCKER_TLS_CERTDIR
+      value: ""
+    volumeMounts:
+    - name: docker-config
+      mountPath: /etc/docker/daemon.json
+      subPath: daemon.json
+
+  # kubectl Container
+  - name: kubectl
+    image: bitnami/kubectl:latest
+    command: [ "cat" ]
+    tty: true
+    securityContext:
+      runAsUser: 0
+      readOnlyRootFilesystem: false
+    env:
+    - name: KUBECONFIG
+      value: /kube/config
+    volumeMounts:
+    - name: kubeconfig-secret
+      mountPath: /kube/config
+      subPath: kubeconfig
+
+  volumes:
+  - name: docker-config
+    configMap:
+      name: docker-daemon-config
+  - name: kubeconfig-secret
+    secret:
+      secretName: kubeconfig-secret
+'''
+        }
     }
 
     stages {
-        stage('Checkout') {
+
+        /* ----------------------
+            Checkout
+        ---------------------- */
+        stage('Checkout Code') {
             steps {
-                // Jenkins automatically checks out when using "pipeline from SCM",
-                // but this is explicit and safe:
-                checkout scm
+                container('kubectl') {
+                    git url: 'https://github.com/samarthsiddharam/Demo.git', branch: 'main'
+                }
             }
         }
 
-        stage('Set up Python & install dependencies') {
+        /* ----------------------
+            Build Docker Image
+        ---------------------- */
+        stage('Build Docker Image') {
             steps {
-                sh """
-                    python3 -m venv ${VENV}
-                    . ${VENV}/bin/activate
-                    pip install --upgrade pip
-                    pip install -r requirements.txt
-                """
+                container('dind') {
+                    sh '''
+                        sleep 10
+                        docker build -t static-site:latest .
+                        docker image ls
+                    '''
+                }
             }
         }
 
-        stage('Run tests') {
+        /* ----------------------
+            SonarQube Analysis
+        ---------------------- */
+        stage('SonarQube Analysis') {
             steps {
-                sh """
-                    . ${VENV}/bin/activate
-                    python manage.py test
-                """
+                container('sonar-scanner') {
+                    withCredentials([string(credentialsId: 'jenkins-token-08', variable: 'SONAR_TOKEN')]) {
+                        sh '''
+                            sonar-scanner \
+                              -Dsonar.projectKey=2401008_sam \
+                              -Dsonar.sources=. \
+                              -Dsonar.host.url=http://my-sonarqube-sonarqube.sonarqube.svc.cluster.local:9000 \
+                              -Dsonar.login=$SONAR_TOKEN
+                        '''
+                    }
+                }
             }
         }
 
-        stage('Migrate database') {
-            when {
-                branch 'main'
-            }
-            steps {
-                sh """
-                    . ${VENV}/bin/activate
-                    python manage.py migrate --noinput
-                """
-            }
-        }
-
-        stage('Collect static files') {
-            when {
-                branch 'main'
-            }
-            steps {
-                sh """
-                    . ${VENV}/bin/activate
-                    python manage.py collectstatic --noinput
-                """
-            }
-        }
-
-        stage('Deploy') {
-            when {
-                branch 'main'
-            }
-            steps {
-                // This part depends on how your college wants you to deploy.
-                // For now, we just log a message.
-                sh """
-                    echo "Deployment step goes here (e.g., restart gunicorn/service)"
-                """
-            }
+        /* ----------------------
+            Login to Nexus
+        ---------------------- */
+        stage('Login to Nexus Registry') {
+    steps {
+        container('dind') {
+            sh '''
+                docker login nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085 \
+                    -u student -p Imcc@2025
+            '''
         }
     }
+}
 
-    post {
-        always {
-            echo "Build finished. Check above logs for details."
+
+        /* ----------------------
+            Push Image
+        ---------------------- */
+       stage('Push Docker Image') {
+    steps {
+        container('dind') {
+            sh '''
+                docker tag static-site:latest \
+                nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401008_sam/static-site:latest
+
+                docker push \
+                nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401008_sam/static-site:latest
+
+                docker pull \
+                nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401008_sam/static-site:latest
+            '''
         }
-        success {
-            echo "Pipeline succeeded!"
+    }
+}
+
+
+
+        /* ----------------------
+            Deploy to Kubernetes
+        ---------------------- */
+        stage('Deploy to Kubernetes') {
+    steps {
+        container('kubectl') {
+            sh '''
+                kubectl create namespace 2401008 --dry-run=client -o yaml | kubectl apply -f -
+                kubectl apply -f deployment.yaml -n 2401008
+            '''
         }
-        failure {
-            echo "Pipeline failed. Please check the error logs."
-        }
+    }
+}
+
     }
 }
