@@ -37,7 +37,7 @@ DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 
 if not DEBUG:
-    ALLOWED_HOSTS += ['.onrender.com']
+    ALLOWED_HOSTS += [*]
 
 # Application definition
 
