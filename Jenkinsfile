@@ -73,9 +73,10 @@ spec:
             steps {
                 container('dind') {
                     sh '''
-                        sleep 10
-                        docker build -t health-tracker:latest .
-                        docker image ls
+                        docker build -t health-tracker:v2 .
+docker tag health-tracker:v2 nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401008_sam/health-tracker:v2
+docker push nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401008_sam/health-tracker:v2
+
                     '''
                 }
             }
