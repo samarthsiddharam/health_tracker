@@ -6,34 +6,39 @@ apiVersion: v1
 kind: Pod
 spec:
   containers:
-  - name: sonar
+  - name: sonar-scanner
     image: sonarsource/sonar-scanner-cli
-    command: ["cat"]
+    command:
+    - cat
     tty: true
-
-  - name: dind
-    image: docker:dind
-    securityContext:
-      privileged: true
-    env:
-    - name: DOCKER_TLS_CERTDIR
-      value: ""
-    volumeMounts:
-    - name: docker-config
-      mountPath: /etc/docker/daemon.json
-      subPath: daemon.json
 
   - name: kubectl
     image: bitnami/kubectl:latest
-    command: ["cat"]
+    command:
+    - cat
     tty: true
+    securityContext:
+      runAsUser: 0
+      readOnlyRootFilesystem: false
     env:
     - name: KUBECONFIG
-      value: /kube/config
+      value: /kube/config        
     volumeMounts:
     - name: kubeconfig-secret
       mountPath: /kube/config
       subPath: kubeconfig
+
+  - name: dind
+    image: docker:dind
+    securityContext:
+      privileged: true 
+    env:
+    - name: DOCKER_TLS_CERTDIR
+      value: "" 
+    volumeMounts:
+    - name: docker-config
+      mountPath: /etc/docker/daemon.json
+      subPath: daemon.json
 
   volumes:
   - name: docker-config
@@ -45,78 +50,72 @@ spec:
 '''
         }
     }
-
-    environment {
-        IMAGE_NAME = "health-tracker"
-        IMAGE_TAG  = "v3"
-        NAMESPACE  = "2401008"
-        NEXUS_REGISTRY = "nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085"
-        NEXUS_REPO = "2401008_sam"
-    }
-
+    
     stages {
 
-        /* ==================================================
-           Build Docker Image
-        ================================================== */
-        stage('Build') {
+        stage('Build Docker Image') {
             steps {
                 container('dind') {
-                    sh """
+                    sh '''
                         sleep 15
-                        docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
-                    """
+                        docker build -t health-tracker:latest .
+                        docker image ls
+                    '''
                 }
             }
         }
 
-        /* ==================================================
-           Push to Nexus
-        ================================================== */
-        stage('Push Image') {
+        stage('SonarQube Analysis') {
+            steps {
+                container('sonar-scanner') {
+                     withCredentials([string(credentialsId: 'jenkins-token-08', variable: 'SONAR_TOKEN')]) {
+                        sh '''
+                            sonar-scanner \
+                                -Dsonar.projectKey=2401008_health_tracker \
+                                -Dsonar.projectName=health-tracker-2401008 \
+                                -Dsonar.host.url=http://my-sonarqube-sonarqube.sonarqube.svc.cluster.local:9000 \
+                                -Dsonar.login=$SONAR_TOKEN \
+                                -Dsonar.sources=. 
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Login to Docker Registry') {
             steps {
                 container('dind') {
-                    sh """
-                        docker login ${NEXUS_REGISTRY} -u student -p Imcc@2025
-
-                        docker tag ${IMAGE_NAME}:${IMAGE_TAG} \
-                        ${NEXUS_REGISTRY}/${NEXUS_REPO}/${IMAGE_NAME}:${IMAGE_TAG}
-
-                        docker push \
-                        ${NEXUS_REGISTRY}/${NEXUS_REPO}/${IMAGE_NAME}:${IMAGE_TAG}
-                    """
+                    sh 'docker --version'
+                    sh 'sleep 10'
+                    sh 'docker login nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085 -u student -p Imcc@2025'
                 }
             }
         }
 
-        /* ==================================================
-           Deploy to Kubernetes
-        ================================================== */
-        stage('Deploy K8s') {
+        stage('Build - Tag - Push') {
             steps {
-                container('kubectl') {
-                    sh """
-                        kubectl create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
-
-                        kubectl apply -f deployment.yaml -n ${NAMESPACE}
-
-                        sleep 5
-                        kubectl rollout status deployment/health-tracker-deployment -n ${NAMESPACE}
-                    """
+                container('dind') {
+                    sh '''
+                        docker tag health-tracker:latest nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401008_sam/health-tracker:latest
+                        docker push nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401008_sam/health-tracker:latest
+                        docker pull nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401008_sam/health-tracker:latest
+                        docker image ls
+                    '''
                 }
             }
         }
-
-        /* ==================================================
-           Get Logs
-        ================================================== */
-        stage('Logs') {
+        
+        stage('Deploy App') {
             steps {
                 container('kubectl') {
-                    sh """
-                        kubectl get pods -n ${NAMESPACE}
-                        kubectl logs -l app=health-tracker -n ${NAMESPACE} --tail=50 || true
-                    """
+                    script {
+                        dir('k8s') {
+                            sh '''
+                                kubectl apply -f deployment.yaml
+                                kubectl rollout status deployment/health-tracker-deployment -n 2401008
+                            '''
+                        }
+                    }
                 }
             }
         }
