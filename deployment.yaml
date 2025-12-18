@@ -27,12 +27,14 @@ spec:
     spec:
       imagePullSecrets:
         - name: nexus-secret
-      containers:
-      - name: health-tracker
-        image: nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401008_sam/health-tracker:v2
-        imagePullPolicy: Always
-        ports:
-          - containerPort: 8000
+      spec:
+  containers:
+    - name: health-tracker
+      image: nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401008_sam/health-tracker:v2
+      imagePullPolicy: Always
+      ports:
+        - containerPort: 8000
+
 
 
 ---
