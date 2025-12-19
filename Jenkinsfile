@@ -110,8 +110,18 @@ spec:
                 container('kubectl') {
                     sh '''
                         kubectl get namespace 2401008 || kubectl create namespace 2401008
-                        kubectl apply -f deployment.yaml
+
+                        kubectl apply -f deployment.yaml -n 2401008
+                        
+                        kubectl delete pod -l app=health-tracker -n 2401008 || true
+                        
                         kubectl rollout status deployment/health-tracker-deployment -n 2401008
+                        
+                        kubectl scale deployment health-tracker-deployment --replicas=0 -n 2401008
+                        sleep 5
+                        kubectl scale deployment health-tracker-deployment --replicas=1 -n 2401008
+
+                           
                     '''
                 }
             }
