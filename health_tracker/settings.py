@@ -32,12 +32,13 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # Debug mode should be False in production for security
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
-# Hosts that this Django application can serve
-# For production, add your domain names here
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
+ALLOWED_HOSTS = [
+    "health-tracker.imcc.com",
+    "localhost",
+    "127.0.0.1",
+]
 
-if not DEBUG:
-    ALLOWED_HOSTS += ["*"]
+
 
 # Application definition
 
