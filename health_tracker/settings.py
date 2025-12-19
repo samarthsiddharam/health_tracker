@@ -141,7 +141,6 @@ USE_TZ = True            # Enable timezone support
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = "/static/"  # URL prefix for static files
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -153,15 +152,13 @@ LOGIN_REDIRECT_URL = 'dashboard'    # Where to redirect after successful login
 LOGOUT_REDIRECT_URL = 'login'       # Where to redirect after logout
 LOGIN_URL = 'login'                 # URL to redirect to for login (used by @login_required)
 
-# Static files configuration
-STATICFILES_DIRS = [BASE_DIR / "static"]  # Additional directories for static files during development
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')    # Directory where static files will be collected for production
+STATIC_URL = '/static/'
+STATIC_ROOT = '/app/staticfiles'
+STATICFILES_DIRS = []
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-# Remove whitenoise compression in production
-if not DEBUG:
-    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
 
-# STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
 
 import logging
 LOGGING = {
