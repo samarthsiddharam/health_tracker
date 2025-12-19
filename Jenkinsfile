@@ -159,6 +159,24 @@ spec:
                 }
             }
         }
+        stage('SHOW FULL ERROR LOGS') {
+            steps {
+                container('kubectl') {
+                    sh '''
+                    POD=$(kubectl get pods -n 2401008 -l app=health-tracker -o jsonpath="{.items[0].metadata.name}")
+                    
+                    echo "======= POD ======="
+                    echo $POD
+                    
+                    echo "======= TAIL LOGS ======="
+                    kubectl logs $POD -n 2401008 --tail=200
+
+                    echo "======= FULL LOGS ======="
+                    kubectl logs $POD -n 2401008
+                    '''
+                }
+            }
+        }
 
     }
 }
