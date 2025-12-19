@@ -99,26 +99,26 @@ spec:
           image: 127.0.0.1:30085/2401008_sam/health-tracker:latest
           ports:
             - containerPort: 8000
-
           env:
             - name: DB_NAME
               value: "healthtracker_2401008"
-
             - name: DB_USER
               value: "samarth"
-
             - name: DB_PASSWORD
               value: "Samarth@2025"
-
             - name: DB_HOST
               value: "postgres-service"
-
             - name: DB_PORT
               value: "5432"
-
             - name: DEBUG
               value: "0"
-
+          volumeMounts:
+            - name: static-volume
+              mountPath: /app/staticfiles
+      volumes:
+        - name: static-volume
+          persistentVolumeClaim:
+            claimName: static-pvc
 ---
 
 # ============================================================
