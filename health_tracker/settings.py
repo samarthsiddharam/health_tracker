@@ -165,14 +165,15 @@ if not DEBUG:
 
 import logging
 LOGGING = {
-    'version': 1,
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
         },
     },
-    'root': {
-        'handlers': ['console'],
-        'level': 'ERROR',
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
     },
-
+}
