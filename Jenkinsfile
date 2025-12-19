@@ -108,16 +108,34 @@ spec:
         stage('Deploy App') {
             steps {
                 container('kubectl') {
-                    script {
-                        dir('k8s') {
-                            sh '''
-                                kubectl apply -f deployment.yaml
-                                kubectl rollout status deployment/health-tracker-deployment -n 2401008
-                            '''
-                        }
-                    }
+                    sh '''
+                        kubectl get namespace 2401008 || kubectl create namespace 2401008
+                        kubectl apply -f deployment.yaml
+                        kubectl rollout status deployment/health-tracker-deployment -n 2401008
+                    '''
                 }
             }
         }
+        
+        stage('Debug Kubernetes State') {
+            steps {
+                container('kubectl') {
+                    sh '''
+                        echo "========== PODS =========="
+                        kubectl get pods -n 2401008
+        
+                        echo "========== SERVICES =========="
+                        kubectl get svc -n 2401008
+        
+                        echo "========== INGRESS =========="
+                        kubectl get ingress -n 2401008
+        
+                        echo "========== POD LOGS =========="
+                        kubectl logs -l app=health-tracker -n 2401008 || true
+                    '''
+                }
+            }
+        }
+
     }
 }
