@@ -142,6 +142,19 @@ spec:
         
                         echo "========== POD LOGS =========="
                         kubectl logs -l app=health-tracker -n 2401008 || true
+                        sleep 5
+                        
+                        echo "========== PODS =========="
+                        kubectl get pods -n 2401008
+
+                        echo "========== SERVICES =========="
+                        kubectl get svc -n 2401008
+        
+                        echo "========== INGRESS =========="
+                        kubectl get ingress -n 2401008
+        
+                        echo "========== POD LOGS =========="
+                        kubectl logs -l app=health-tracker -n 2401008 || true
                     '''
                 }
             }
